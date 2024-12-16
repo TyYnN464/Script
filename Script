@@ -1,8 +1,31 @@
 # Script PowerShell pour télécharger une archive depuis un serveur FTP et envoyer un rapport par e-mail
 
-# Configuration des variables
+# Fonction pour vérifier si le fichier existe sur le serveur FTP
+function Validate-FTPFile {
+    param (
+        [string]$ftpServer,
+        [string]$ftpFilePath
+    )
+    $uri = "$ftpServer/$ftpFilePath"
+    try {
+        $request = [System.Net.WebRequest]::Create($uri)
+        $request.Method = "HEAD"
+        $response = $request.GetResponse()
+        $response.Close()
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+# Demander à l'utilisateur l'adresse du serveur FTP et le chemin du fichier
 $ftpServer = Read-Host "Entrez l'adresse du serveur FTP (par exemple, ftp://172.29.229.246)"
-$ftpFilePath = Read-Host "Entrez le chemin complet du fichier sur le serveur FTP (par exemple, /srv/ftp/monarchive.tar.gz)"
+do {
+    $ftpFilePath = Read-Host "Entrez le chemin complet du fichier sur le serveur FTP (par exemple, /srv/ftp/monarchive.tar.gz)"
+    if (-Not (Validate-FTPFile -ftpServer $ftpServer -ftpFilePath $ftpFilePath)) {
+        Write-Host "Le fichier spécifié n'existe pas sur le serveur FTP. Veuillez réessayer." -ForegroundColor Red
+    }
+} while (-Not (Validate-FTPFile -ftpServer $ftpServer -ftpFilePath $ftpFilePath))
 
 # Dossier local pour enregistrer le fichier
 $localDirectory = "C:\archive"
