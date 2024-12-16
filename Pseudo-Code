@@ -1,16 +1,11 @@
-Demander l'adresse du serveur FTP à l'utilisateur.
-Demander le chemin complet du fichier sur le serveur FTP.
-Vérifier si le fichier existe sur le serveur.
-Si le fichier n'existe pas :
-Afficher un message d'erreur.
-Re-demander le chemin du fichier.
-Créer le dossier local s'il n'existe pas.
-Générer un nom de fichier local avec la date et l'heure.
-Tenter de télécharger le fichier :
-Si le téléchargement réussit :
-Envoyer un e-mail de confirmation.
-Afficher un message de succès.
-Si le téléchargement échoue :
-Identifier la cause (chemin invalide, échec de connexion, etc.).
-Envoyer un e-mail d'erreur avec les détails.
-Afficher le message d'erreur.
+Déclaration des variables globales.
+Définition des fonctions :
+Validation du fichier FTP.
+Envoi d'e-mail.
+Interaction avec l'utilisateur pour obtenir les données nécessaires :
+Adresse FTP.
+Chemin du fichier source.
+Nom du fichier de destination.
+Vérification ou création du dossier local.
+Téléchargement du fichier et gestion des erreurs.
+Envoi d'un e-mail selon le résultat (succès ou échec).
