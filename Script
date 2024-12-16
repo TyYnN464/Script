@@ -1,4 +1,12 @@
-# Script PowerShell pour télécharger une archive depuis un serveur FTP et envoyer un rapport par e-mail
+# Variables globales
+$ftpServer = ""
+$ftpFilePath = ""
+$localDirectory = "C:\archives"
+$smtpServer = "smtp.gmail.com"
+$smtpPort = 587
+$emailFrom = "votreadresse@gmail.com"
+$emailPassword = "votre_mot_de_passe_application"
+$adminEmail = "efefebg@gmail.com"
 
 # Fonction pour vérifier si le fichier existe sur le serveur FTP
 function Validate-FTPFile {
@@ -18,7 +26,7 @@ function Validate-FTPFile {
     }
 }
 
-# Demander à l'utilisateur l'adresse du serveur FTP et le chemin du fichier
+# Demande à l'utilisateur les chemins FTP et fichier de destination
 $ftpServer = Read-Host "Entrez l'adresse du serveur FTP (par exemple, ftp://172.29.229.246)"
 do {
     $ftpFilePath = Read-Host "Entrez le chemin complet du fichier sur le serveur FTP (par exemple, /srv/ftp/monarchive.tar.gz)"
@@ -27,29 +35,25 @@ do {
     }
 } while (-Not (Validate-FTPFile -ftpServer $ftpServer -ftpFilePath $ftpFilePath))
 
-# Dossier local pour enregistrer le fichier
-$localDirectory = "C:\archive"
+# Demande le nom du fichier local ou génère un nom par défaut
+$date = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+$defaultFileName = "monarchive_$date.tar.gz"
+$localFileName = Read-Host "Entrez le nom du fichier de destination (par défaut : $defaultFileName)"
+if (-Not $localFileName) {
+    $localFileName = $defaultFileName
+}
+$localFilePath = Join-Path -Path $localDirectory -ChildPath $localFileName
+
+# Vérifie ou crée le dossier de destination
 if (-Not (Test-Path -Path $localDirectory)) {
     try {
         New-Item -ItemType Directory -Path $localDirectory | Out-Null
-        Write-Output "Dossier local créé : $localDirectory"
+        Write-Host "Dossier local créé : $localDirectory" -ForegroundColor Green
     } catch {
         Write-Error "Impossible de créer le dossier local : $_"
         exit 1
     }
 }
-
-# Configuration SMTP
-$adminEmail = "efefebg@gmail.com"
-$smtpServer = "smtp.gmail.com"
-$smtpPort = 587
-$emailFrom = "votreadresse@gmail.com"
-$emailPassword = "votre_mot_de_passe_application"
-
-# Génération du nom de fichier avec date et heure
-$date = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
-$localFileName = "monarchive_$date.tar.gz"
-$localFilePath = Join-Path -Path $localDirectory -ChildPath $localFileName
 
 # Fonction pour envoyer un e-mail
 function Send-Email {
@@ -67,7 +71,7 @@ function Send-Email {
     $smtp.Credentials = New-Object System.Net.NetworkCredential($emailFrom, $emailPassword)
     try {
         $smtp.Send($message)
-        Write-Output "E-mail envoyé avec succès."
+        Write-Host "E-mail envoyé avec succès." -ForegroundColor Green
     } catch {
         Write-Error "Erreur lors de l'envoi de l'e-mail : $_"
     }
@@ -76,7 +80,7 @@ function Send-Email {
 # Téléchargement du fichier depuis le serveur FTP
 try {
     $uri = "$ftpServer/$ftpFilePath"
-    Write-Output "Téléchargement en cours de : $uri"
+    Write-Host "Téléchargement en cours de : $uri" -ForegroundColor Yellow
     $webClient = New-Object System.Net.WebClient
     $webClient.DownloadFile($uri, $localFilePath)
 
@@ -84,11 +88,13 @@ try {
     $subject = "Récupération réussie"
     $body = "Le fichier a été téléchargé avec succès depuis $uri vers $localFilePath."
     Send-Email -subject $subject -body $body
-    Write-Output "Téléchargement réussi."
+    Write-Host "Téléchargement réussi : $localFilePath" -ForegroundColor Green
 
 } catch {
     # Gestion des erreurs
     $errorMessage = $_.Exception.Message
+    $errorDetail = ""
+
     if ($errorMessage -like "*404*" -or $errorMessage -like "*Fichier introuvable*") {
         $errorDetail = "Le fichier demandé n'existe pas sur le serveur FTP."
     } elseif ($errorMessage -like "*Échec de connexion*" -or $errorMessage -like "*impossible de se connecter*") {
